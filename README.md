@@ -1,3 +1,9 @@
+Bug Fix Student Delete By ID
+
+- Copy and paste BANKDAO
+- Copy and paste Controller file
+- Copy and paste ListStudent.jsp File
+
 new chnages
 
 - updated ListStudent.jsp and added the delete button and the script
