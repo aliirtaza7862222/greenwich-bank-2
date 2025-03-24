@@ -1,0 +1,7 @@
+<jboss-deployment-structure>
+    <deployment>
+        <dependencies>
+            <module name="javax.servlet.jsp.api"/>
+        </dependencies>
+    </deployment>
+</jboss-deployment-structure>

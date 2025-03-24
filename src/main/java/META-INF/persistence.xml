@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="3.0" xmlns="https://jakarta.ee/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
+	<persistence-unit name="Bank">
+		<jta-data-source>java:/BankDS</jta-data-source>
+		<class>com.bank.model.Account</class>
+		<class>com.bank.model.Student</class>
+		<properties>
+			<property name="hibernate.show_sql" value="true"/>
+			<property name="hibernate.enable_lazy_load_no_trans" value="true"/>
+			<property name="dialect" value="org.hibernate.dialect.MySQLInnoDBDialect"/>
+		</properties>
+	</persistence-unit>
+</persistence>
