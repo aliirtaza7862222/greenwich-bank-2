@@ -33,7 +33,13 @@
                             Delete
                         </button>
                     </form>
+                    <a href="Controller?action=editStudent&id=${student.studentID}" 
+                           class="action-btn edit">
+                            Edit
+                        </a>
+                   
                 </td>
+                
             </tr>
         </c:forEach>
     </table>
