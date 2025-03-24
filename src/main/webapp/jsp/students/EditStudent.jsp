@@ -11,17 +11,12 @@
     
     <c:if test="${not empty error}">
         <div class="error-message">
-            <h3>❌ Error</h3>
+            <h3>Error</h3>
             <p>${error}</p>
         </div>
     </c:if>
     
-    <c:if test="${not empty success}">
-        <div class="success-message">
-            <h3>✅ Success</h3>
-            <p>${success}</p>
-        </div>
-    </c:if>
+
 
     <form method="post" action="Controller" class="student-form">
         <input type="hidden" name="action" value="updateStudent" />
@@ -59,9 +54,7 @@
             <button type="submit" class="submit-btn">
                 <i class="fas fa-save"></i> Update Student
             </button>
-            <a href="Controller?action=home" class="cancel-btn">
-                <i class="fas fa-times"></i> Cancel
-            </a>
+            <button onclick="loadPage('listAccounts')">Back</button>
         </div>
     </form>
 </div>
