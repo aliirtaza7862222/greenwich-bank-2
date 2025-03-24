@@ -45,6 +45,7 @@ public class Controller extends HttpServlet {
 	private void processPOSTRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String action = request.getParameter("action");
 		float amount;
+		int studentID;
 		switch(action)	{
 		/*
 		 * Handle POST Requests here:
@@ -65,16 +66,47 @@ public class Controller extends HttpServlet {
 		    	request.getRequestDispatcher("Controller?action=listStudents").forward(request, response);
 		    }
 		    break;
+//		case "deleteStudent":
+//		    studentID = Integer.parseInt(request.getParameter("studentID"));
+//		    int sessionStudentID = getStudentIdFromCookie(request);
+//		    boolean deleted;
+//		    if(sessionStudentID != studentID) {
+//
+//		    	deleted = bankDAO.deleteAccount(studentID) && bankDAO.deleteStudent(studentID);
+//		    } else {
+//		    	deleted = false;
+//		    }
+//		    if (deleted) {
+//		        // Redirect to home after deletion
+//		        response.sendRedirect(request.getContextPath());
+//		    } else {
+//		        request.getSession().setAttribute("error", "Could not delete student.");
+//		        response.sendRedirect(request.getContextPath());
+//		    }
+//		    break;
+		    
+		case "deleteStudent":
+		    studentID = Integer.parseInt(request.getParameter("studentID"));
+		    boolean deleted = bankDAO.deleteStudent(studentID);
+		    if (deleted) {
+		    	response.setStatus(HttpServletResponse.SC_OK);
+				request.getRequestDispatcher(request.getContextPath());
+				response.sendRedirect(request.getContextPath());
+		    } else {
+		    	request.getSession().setAttribute("error", "Could not delete student.");
+		        response.sendRedirect(request.getContextPath());
+		    }
+		    break;
 		case "addAccount":
 			Account account = new Account();
 			account.setAccountAlias(request.getParameter("accountAlias"));
 			account.setAccountBalance(0.0f);
-			int studentID = getStudentIdFromCookie(request);
+			studentID = getStudentIdFromCookie(request);
 			if(studentID != 0) {
 				account.setStudent(bankDAO.getStudentByID(studentID));
 				System.out.println("Account being created...");
 				bankDAO.createAccount(account);
-				response.sendRedirect("/Bank/");
+				response.sendRedirect(request.getContextPath());
 			} else {response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Student not logged in or recognized");}
 			
 			break;
@@ -85,8 +117,8 @@ public class Controller extends HttpServlet {
 				Account accToDelete = bankDAO.getAccountByID(accountID);
 				if (accToDelete != null && bankDAO.deleteAccount(accountID)) {
 					response.setStatus(HttpServletResponse.SC_OK);
-					request.getRequestDispatcher("/Bank/");
-					response.sendRedirect("/Bank/");
+					request.getRequestDispatcher(request.getContextPath());
+					response.sendRedirect(request.getContextPath());
 					} else { 
 		            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Account not found or deleted.");
 				}
@@ -94,21 +126,6 @@ public class Controller extends HttpServlet {
 		        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing account ID.");
 		    }
 			break;
-			
-
-		// testing delete all student accounts
-		case "deleteAllStudentAccounts":
-		    studentID = getStudentIdFromCookie(request);
-		    if (studentID != 0) {
-		        List<Account> accounts = bankDAO.getAccountsByStudentID(studentID);
-		        for (Account acc : accounts) {
-		            bankDAO.deleteAccount(acc.getAccountID());
-		        }
-		        response.sendRedirect("Controller?action=listAccounts");
-		    } else {
-		        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Student not logged in.");
-		    }
-		    break;
 		case "transfer":
 	        int fromAccountID = Integer.parseInt(request.getParameter("fromAccountID"));
 	        int toAccountID = Integer.parseInt(request.getParameter("toAccountID"));
@@ -227,28 +244,13 @@ public class Controller extends HttpServlet {
 
 		case "deleteAccount": // Delete
 			break;
-		case "deleteStudent":
-		    int studentId = Integer.parseInt(request.getParameter("id"));
-		    if (bankDAO.deleteStudent(studentId)) {
-		        response.sendRedirect("Controller?action=listStudents");
-		    } else {
-		        request.setAttribute("error", "Failed to delete student");
-		        request.getRequestDispatcher("Controller?action=listStudents").forward(request, response);
-		    }
-		    break;	
+			
 		case "viewAccount":
 		    int id = Integer.parseInt(request.getParameter("id"));
 		    account = bankDAO.getAccountByID(id);
 		    request.setAttribute("account", account);
 		    request.getRequestDispatcher("jsp/accounts/ViewAccount.jsp").forward(request, response);
 		    break;
-		 // testing get account delete confirmation
-		case "deleteAccountConfirmation":
-			int accountId = Integer.parseInt(request.getParameter("id"));
-			account = bankDAO.getAccountByID(accountId);
-			request.setAttribute("account", account);
-			request.getRequestDispatcher("jsp/accounts/DeleteAccountConfirmation.jsp").forward(request, response);
-		 	break;
 
 // --------------- Business Logic ---------------------
 
