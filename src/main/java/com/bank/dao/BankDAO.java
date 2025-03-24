@@ -32,7 +32,6 @@ public class BankDAO {
 	        e.printStackTrace(); 
 	        return false;
 	    }
-		//TODO: Implement duplication checking.
 	}
 	public List<Student> getAllStudents() {
 		return em.createQuery("SELECT s FROM Student s", Student.class).getResultList();
@@ -64,20 +63,37 @@ public class BankDAO {
 	    }
 	}
 
+//	public boolean deleteStudent(int studentId) {
+//		Student student = em.find(Student.class, studentId);
+//		if (student == null) {
+//			return false;
+//		}
+//		em.remove(student);
+//		em.flush();
+//		// Verify deleted properly
+//		Student deleted = em.find(Student.class, studentId);
+//		TypedQuery<Account> query = em.createQuery("SELECT a FROM Account a WHERE a.student.studentID = :id", Account.class);
+//		query.setParameter("id", studentId);
+//		List<Account> remainingAccounts = query.getResultList();
+//		return deleted == null && (remainingAccounts == null || remainingAccounts.isEmpty());
+// 	}
 	public boolean deleteStudent(int studentId) {
-		Student student = em.find(Student.class, studentId);
-		if (student == null) {
-			return false;
-		}
-		em.remove(student);
-		em.flush();
-		// Verify deleted properly
-		Student deleted = em.find(Student.class, studentId);
-		TypedQuery<Account> query = em.createQuery("SELECT a FROM Account WHERE a.student.studentID = :id", Account.class);
-		query.setParameter("id", studentId);
-		List<Account> remainingAccounts = query.getResultList();
-		return deleted == null && (remainingAccounts == null || remainingAccounts.isEmpty());
- 	}
+	    try {
+	        // First delete all accounts associated with the student
+	        deleteAllUserAccounts(studentId);
+	        
+	        // Then delete the student
+	        Student student = em.find(Student.class, studentId);
+	        if (student == null) {
+	            return false;
+	        }
+	        em.remove(student);
+	        return true;
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
 
 	
 	// =========== Account CRUD ======================
@@ -101,7 +117,18 @@ public class BankDAO {
 			return null;
 		}
 	}
+	public Account getAccountByAlias(String alias) {
+	    try {
+	        TypedQuery<Account> query = em.createQuery(
+	            "SELECT a FROM Account a WHERE a.accountAlias = :alias", Account.class);
+	        query.setParameter("alias", alias);
+	        return query.getSingleResult();
+	    } catch (NoResultException e) {
+	        return null;
+	    }
+	}
 
+	
 	public List<Account> getAccountsByStudentID(int studentID) {
 		TypedQuery<Account> query = em.createQuery(
 	            "SELECT a FROM Account a WHERE a.student.studentID = :studentID", Account.class);
@@ -126,20 +153,6 @@ public class BankDAO {
 		em.flush();
 		return true;
  	}
-
-	public boolean withdraw(int accountId, float amount) {
-		Account account = em.find(Account.class, accountId);
-		if (account != null && account.getAccountBalance() >= amount){
-			// Set balance to be amount less than before
-			account.setAccountBalance(account.getAccountBalance() - amount);
-			em.merge(account);
-			return true;
-		}
-		return false; // Insufficient Funds
-	}
-	
-	
-//	testing delete all user accounts
 	public boolean deleteAllUserAccounts(int studentID) {
 	    try {
 	        int deletedCount = em.createQuery(
@@ -153,7 +166,16 @@ public class BankDAO {
 	    }
 	}
 	
-	
+	public boolean withdraw(int accountId, float amount) {
+		Account account = em.find(Account.class, accountId);
+		if (account != null && account.getAccountBalance() >= amount){
+			// Set balance to be amount less than before
+			account.setAccountBalance(account.getAccountBalance() - amount);
+			em.merge(account);
+			return true;
+		}
+		return false; // Insufficient Funds
+	}
 	public boolean deposit(int accountId, float amount) {
 		// Literally the same as withdraw except + amount
 		Account account = em.find(Account.class, accountId);
@@ -183,17 +205,5 @@ public class BankDAO {
 		    } else {
 		        return false; // Insufficient funds
 		    }
-	}
-	
-	// testing get account by alias
-	public Account getAccountByAlias(String alias) {
-	    try {
-	        TypedQuery<Account> query = em.createQuery(
-	            "SELECT a FROM Account a WHERE a.accountAlias = :alias", Account.class);
-	        query.setParameter("alias", alias);
-	        return query.getSingleResult();
-	    } catch (NoResultException e) {
-	        return null;
-	    }
 	}
 }
