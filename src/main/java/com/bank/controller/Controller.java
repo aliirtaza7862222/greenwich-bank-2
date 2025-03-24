@@ -97,6 +97,36 @@ public class Controller extends HttpServlet {
 		        response.sendRedirect(request.getContextPath());
 		    }
 		    break;
+		case "updateStudent":
+		    try {
+		        int editStudentID = Integer.parseInt(request.getParameter("studentID"));
+		        Student editableStudent = bankDAO.getStudentByID(editStudentID);
+		        
+		        if (editableStudent == null) {
+		            request.setAttribute("error", "Student not found");
+		            request.getRequestDispatcher("jsp/students/EditStudent.jsp").forward(request, response);
+		            return;
+		        }
+		        
+		        editableStudent.setStudentName(request.getParameter("studentName"));
+		        editableStudent.setStudentEmail(request.getParameter("studentEmail"));
+		        editableStudent.setStudentAddress(request.getParameter("studentAddress"));
+		        editableStudent.setStudentPhone(request.getParameter("studentPhone"));
+		        
+		        if (bankDAO.updateStudent(editableStudent)) {
+		            request.setAttribute("success", "Student updated");
+		            response.setStatus(HttpServletResponse.SC_OK);
+					request.getRequestDispatcher(request.getContextPath());
+					response.sendRedirect(request.getContextPath());
+		        } else {
+		            request.setAttribute("error", "Failed to update student");
+		            request.getRequestDispatcher("jsp/students/EditStudent.jsp").forward(request, response);
+		        }
+		    } catch (Exception e) {
+		        request.setAttribute("error", "Error: " + e.getMessage());
+		        request.getRequestDispatcher("jsp/students/EditStudent.jsp").forward(request, response);
+		    }
+		    break;
 		case "addAccount":
 			Account account = new Account();
 			account.setAccountAlias(request.getParameter("accountAlias"));
@@ -251,7 +281,23 @@ public class Controller extends HttpServlet {
 		    request.setAttribute("account", account);
 		    request.getRequestDispatcher("jsp/accounts/ViewAccount.jsp").forward(request, response);
 		    break;
-
+		case "editStudent":
+		    try {
+		        int studentId = Integer.parseInt(request.getParameter("id"));
+		        Student studentToEdit = bankDAO.getStudentByID(studentId);
+		        if (studentToEdit == null) {
+		            request.setAttribute("error", "Student not found");
+		            request.getRequestDispatcher("jsp/students/ListStudents.jsp").forward(request, response);
+		            return;
+		        }
+		        
+		        request.setAttribute("student", studentToEdit);
+		        request.getRequestDispatcher("jsp/students/EditStudent.jsp").forward(request, response);
+		    } catch (Exception e) {
+		        request.setAttribute("error", "Error loading student: " + e.getMessage());
+		        request.getRequestDispatcher("jsp/students/ListStudents.jsp").forward(request, response);
+		    }
+		    break;
 // --------------- Business Logic ---------------------
 
 		case "transfer":
