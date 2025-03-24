@@ -25,19 +25,20 @@
                 <td>${student.studentEmail}</td>
                 <td>${student.studentPhone}</td>
                 <td>
-                    <form method="post" action="Controller" style="display:inline;">
-                        <input type="hidden" name="action" value="deleteStudent" />
-                        <input type="hidden" name="studentID" value="${student.studentID}" />
-                        <button type="submit" class="action-btn delete"
-                                onclick="return confirm('Are you sure you want to delete this student?');">
-                            Delete
-                        </button>
-                    </form>
-                    <a href="Controller?action=editStudent&id=${student.studentID}" 
-                           class="action-btn edit">
-                            Edit
+                    <div class="action-buttons" style="display: flex; gap: 8px;">
+                        <form method="post" action="Controller" style="display:inline;">
+                            <input type="hidden" name="action" value="deleteStudent" />
+                            <input type="hidden" name="studentID" value="${student.studentID}" />
+                            <button type="submit" class="action-btn delete"
+                                    onclick="return confirm('Are you sure you want to delete this student?');">
+                                Delete
+                            </button>
+                        </form>
+                        <a href="Controller?action=editStudent&id=${student.studentID}" 
+                               class="action-btn" style="text-decoration: none;">
+                                Edit
                         </a>
-                   
+                    </div>
                 </td>
                 
             </tr>
