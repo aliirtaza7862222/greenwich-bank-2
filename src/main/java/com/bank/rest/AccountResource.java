@@ -52,7 +52,6 @@ public class AccountResource {
         bankDAO.createAccount(account);
         return Response.status(Response.Status.CREATED).entity(account).build();
     }
-	
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -75,10 +74,9 @@ public class AccountResource {
         }
         return Response.noContent().build();
     }
-    //TODO: implement Transfer, withdraw and Deposit
     
     @PUT
-    @Path("/accounts/{id}")
+    @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response modifyAccountBalance(@PathParam("id") int accountId, Map<String, Object> payload) {
@@ -136,4 +134,47 @@ public class AccountResource {
                            .build();
         }
     }
+    
+    
+ // testing delete student account by student id
+    @DELETE
+    @Path("/student/{studentID}")
+    public Response deleteAllStudentAccounts(@PathParam("studentID") int studentID) {
+        List<Account> accounts = bankDAO.getAccountsByStudentID(studentID);
+        if (accounts.isEmpty()) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        
+        for (Account account : accounts) {
+            bankDAO.deleteAccount(account.getAccountID());
+        }
+        return Response.noContent().build();
+    }
+
+    // testing delete all accounts
+    @DELETE
+    public Response deleteAllAccounts() {
+        List<Account> accounts = bankDAO.getAllAccounts();
+        if (accounts.isEmpty()) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        
+        for (Account account : accounts) {
+            bankDAO.deleteAccount(account.getAccountID());
+        }
+        return Response.noContent().build();
+    }
+
+    // testing get account by alias
+    @GET
+    @Path("/alias/{alias}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAccountByAlias(@PathParam("alias") String alias) {
+        Account account = bankDAO.getAccountByAlias(alias);
+        if (account == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.ok(account).build();
+    }
+
 }

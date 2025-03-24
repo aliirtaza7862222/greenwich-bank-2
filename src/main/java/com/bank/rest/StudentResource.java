@@ -1,7 +1,6 @@
 package com.bank.rest;
 
 import com.bank.dao.BankDAO;
-import com.bank.model.Account;
 import com.bank.model.Student;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;

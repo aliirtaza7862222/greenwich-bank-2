@@ -102,4 +102,44 @@ footer {
 .submit-btn:hover {
     background-color: #34495e;
 }
-
+    .result-container {
+        max-width: 600px;
+        margin: auto;
+        text-align: center;
+        padding: 2em;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+    }
+    .transfer-box {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 1em;
+    }
+    .account-section {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 1em;
+        width: 45%;
+        background-color: #fff;
+    }
+    .positive {
+        color: green;
+        font-weight: bold;
+    }
+    .negative {
+        color: red;
+        font-weight: bold;
+    }
+    .btn {
+        padding: 10px 20px;
+        font-size: 1em;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    .btn:hover {
+        background-color: #3e8e41;
+    }

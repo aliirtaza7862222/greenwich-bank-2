@@ -26,7 +26,6 @@ public class Controller extends HttpServlet {
      */
     public Controller() {
         super();
-        // TODO Auto-generated constructor stub
     }
 
 	/**
@@ -45,6 +44,7 @@ public class Controller extends HttpServlet {
 
 	private void processPOSTRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String action = request.getParameter("action");
+		float amount;
 		switch(action)	{
 		/*
 		 * Handle POST Requests here:
@@ -58,7 +58,7 @@ public class Controller extends HttpServlet {
 		    student.setStudentPhone(request.getParameter("phone"));
 		    student.setStudentAddress(request.getParameter("address"));
 		    if(bankDAO.createStudent(student)) {
-		    	response.sendRedirect("");
+		    	response.sendRedirect("/Bank/");
 		    }
 		    else {
 		    	request.setAttribute("error", "Could not add student.");
@@ -69,20 +69,12 @@ public class Controller extends HttpServlet {
 			Account account = new Account();
 			account.setAccountAlias(request.getParameter("accountAlias"));
 			account.setAccountBalance(0.0f);
-			int studentID = 0;
-			Cookie[] cookies = request.getCookies();
-			if (cookies != null) {
-			    for (Cookie cookie : cookies) {
-			        if ("studentID".equals(cookie.getName())) {
-			            studentID = Integer.valueOf(cookie.getValue());
-			        }
-			    }
-			}
+			int studentID = getStudentIdFromCookie(request);
 			if(studentID != 0) {
 				account.setStudent(bankDAO.getStudentByID(studentID));
 				System.out.println("Account being created...");
 				bankDAO.createAccount(account);
-				response.sendRedirect("");
+				response.sendRedirect("/Bank/");
 			} else {response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Student not logged in or recognized");}
 			
 			break;
@@ -93,26 +85,85 @@ public class Controller extends HttpServlet {
 				Account accToDelete = bankDAO.getAccountByID(accountID);
 				if (accToDelete != null && bankDAO.deleteAccount(accountID)) {
 					response.setStatus(HttpServletResponse.SC_OK);
-				} else { 
+					request.getRequestDispatcher("/Bank/");
+					response.sendRedirect("/Bank/");
+					} else { 
 		            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Account not found or deleted.");
 				}
 			} else {
 		        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing account ID.");
 		    }
 			break;
-		case "transfer":
-//			testing transfers
-			 handleTransfer(request, response);
-			break;
-		case "withdraw":
-			//testing withdraw
-			 handleWithdraw(request, response);
-			break;
 			
-			// testing deposit
-		case "deposit":
-            handleDeposit(request, response);
-            break;
+
+		// testing delete all student accounts
+		case "deleteAllStudentAccounts":
+		    studentID = getStudentIdFromCookie(request);
+		    if (studentID != 0) {
+		        List<Account> accounts = bankDAO.getAccountsByStudentID(studentID);
+		        for (Account acc : accounts) {
+		            bankDAO.deleteAccount(acc.getAccountID());
+		        }
+		        response.sendRedirect("Controller?action=listAccounts");
+		    } else {
+		        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Student not logged in.");
+		    }
+		    break;
+		case "transfer":
+	        int fromAccountID = Integer.parseInt(request.getParameter("fromAccountID"));
+	        int toAccountID = Integer.parseInt(request.getParameter("toAccountID"));
+	        amount = Float.parseFloat(request.getParameter("amount"));
+	        if((amount <= bankDAO.getAccountByID(fromAccountID).getAccountBalance()) 
+	        		&& bankDAO.transfer(fromAccountID, toAccountID, amount)) {
+					request.setAttribute("fromAccount", bankDAO.getAccountByID(fromAccountID));
+					request.setAttribute("toAccount", bankDAO.getAccountByID(toAccountID));
+					request.setAttribute("amount", amount);
+					request.setAttribute("transaction", "transfer");
+					request.getRequestDispatcher("jsp/transactions/TransactionResult.jsp").forward(request, response);
+	        } else {
+					request.setAttribute("error", "Transfer failed...");
+					request.setAttribute("transaction", "transfer");
+					request.getRequestDispatcher("jsp/transactions/TransactionResult.jsp").forward(request, response);
+	        }
+
+			break;
+		case "depositOrWithdraw":
+			//get form parameters
+			String transaction = request.getParameter("transaction");
+			int accountID = Integer.parseInt(request.getParameter("accountID"));
+			amount = Float.parseFloat(request.getParameter("amount"));
+			if (transaction.equals("withdraw")) {
+				if((amount <= bankDAO.getAccountByID(accountID).getAccountBalance()) 
+						&& bankDAO.withdraw(accountID, amount) 
+						) {
+					//return Account Object if successful to Transaction Result
+					request.setAttribute("account", bankDAO.getAccountByID(accountID));
+					request.setAttribute("transaction", "withdraw");
+					request.getRequestDispatcher("jsp/transactions/TransactionResult.jsp").forward(request, response);
+					
+				} else {
+					request.setAttribute("error", "Withdrawal failed...");
+					request.setAttribute("transaction", "withdraw");
+					request.getRequestDispatcher("jsp/transactions/TransactionResult.jsp").forward(request, response);
+				}
+				
+			} else if (transaction.equals("deposit")) {
+				if(bankDAO.deposit(accountID, amount)) {
+					//return Account Object if successful to Transaction Result
+					request.setAttribute("account", bankDAO.getAccountByID(accountID));
+					request.setAttribute("transaction", "deposit");
+					request.getRequestDispatcher("jsp/transactions/TransactionResult.jsp").forward(request, response);
+					
+				} else {
+					request.setAttribute("error", "Deposit failed...");
+					request.setAttribute("transaction", "deposit");
+					request.getRequestDispatcher("jsp/transactions/TransactionResult.jsp").forward(request, response);
+				}
+			} else {
+				response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "Unknown parameter in transaction");
+			}
+			break;
+		
 		default:
 	        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Unknown POST action: " + action);
 		}
@@ -123,7 +174,6 @@ public class Controller extends HttpServlet {
 		String action = request.getParameter("action");
 		List<Student> students;
 		List<Account> accounts = bankDAO.getAllAccounts();
-		Cookie[] cookies;
 		Student student;
 		Account account;
 		int studentID = 0;
@@ -157,16 +207,7 @@ public class Controller extends HttpServlet {
 			break;
 // --------------- Accounts ---------------------
 		case "listAccounts": // Lists all accounts if not logged in, otherwise lists student accounts
-			studentID = 0;
-			cookies = request.getCookies();
-			if (cookies != null) {
-			    for (Cookie cookie : cookies) {
-			        if ("studentID".equals(cookie.getName())) {
-			            studentID = Integer.valueOf(cookie.getValue());
-			            System.out.println("Student ID from cookie: " + studentID);
-			        }
-			    }
-			}
+			studentID = getStudentIdFromCookie(request);
 
 			if (studentID != 0) {
 			    // Load only accounts for this student
@@ -186,30 +227,40 @@ public class Controller extends HttpServlet {
 
 		case "deleteAccount": // Delete
 			break;
-			
+		case "deleteStudent":
+		    int studentId = Integer.parseInt(request.getParameter("id"));
+		    if (bankDAO.deleteStudent(studentId)) {
+		        response.sendRedirect("Controller?action=listStudents");
+		    } else {
+		        request.setAttribute("error", "Failed to delete student");
+		        request.getRequestDispatcher("Controller?action=listStudents").forward(request, response);
+		    }
+		    break;	
 		case "viewAccount":
 		    int id = Integer.parseInt(request.getParameter("id"));
 		    account = bankDAO.getAccountByID(id);
 		    request.setAttribute("account", account);
 		    request.getRequestDispatcher("jsp/accounts/ViewAccount.jsp").forward(request, response);
 		    break;
+		 // testing get account delete confirmation
+		case "deleteAccountConfirmation":
+			int accountId = Integer.parseInt(request.getParameter("id"));
+			account = bankDAO.getAccountByID(accountId);
+			request.setAttribute("account", account);
+			request.getRequestDispatcher("jsp/accounts/DeleteAccountConfirmation.jsp").forward(request, response);
+		 	break;
 
 // --------------- Business Logic ---------------------
 
 		case "transfer":
+			studentID = getStudentIdFromCookie(request);
+			accounts = bankDAO.getAccountsByStudentID(studentID);
+			request.setAttribute("Accounts", accounts);
 			request.getRequestDispatcher("jsp/transactions/Transfer.jsp").forward(request, response);
 			break;
 
 		case "depositOrWithdraw":
-			cookies = request.getCookies();
-		    if (cookies != null) {
-		        for (Cookie cookie : cookies) {
-		            if ("studentID".equals(cookie.getName())) {
-		                studentID = Integer.parseInt(cookie.getValue());
-		                break;
-		            }
-		        }
-		    }
+			studentID = getStudentIdFromCookie(request);
 		    if (studentID != 0) {
 		        accounts = bankDAO.getAccountsByStudentID(studentID);
 		        request.setAttribute("Accounts", accounts);
@@ -222,77 +273,17 @@ public class Controller extends HttpServlet {
 		}
 	}
 	
-	// function for deposit
-	private void handleDeposit(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-	    try {
-	    	
-	    	// for debuggingg g
-	        System.out.println("deposit request...");
-	        System.out.println("account ID: " + request.getParameter("accountID"));
-	        System.out.println("Amount: " + request.getParameter("amount"));
-	        
-	        
-	        // Get account ID and amount from the request
-	        int accountID = Integer.parseInt(request.getParameter("accountID"));
-	        float amount = Float.parseFloat(request.getParameter("amount"));
-
-	        if (bankDAO.deposit(accountID, amount)) {
-	            response.sendRedirect("Controller?action=listAccounts");
-	        } else {
-	            request.setAttribute("error", "Deposit failed....");
-	            request.getRequestDispatcher("jsp/transactions/DepositOrWithdraw.jsp").forward(request, response);
-	        }
-	    } catch (NumberFormatException e) {
-	        request.setAttribute("error", "Invalid input...");
-	        request.getRequestDispatcher("jsp/transactions/DepositOrWithdraw.jsp").forward(request, response);
-	    }
+	private int getStudentIdFromCookie(HttpServletRequest request) {
+		int studentID = 0;
+		Cookie[] cookies = request.getCookies();
+		if (cookies != null) {
+		    for (Cookie cookie : cookies) {
+		        if ("studentID".equals(cookie.getName())) {
+		            studentID = Integer.valueOf(cookie.getValue());
+		        }
+		    }
+		}	
+		return studentID;
 	}
 	
-	private void handleWithdraw(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-	    try {
-	        // for debugging
-	        System.out.println("withdraw request...");
-	        System.out.println("Account ID: " + request.getParameter("accountID"));
-	        System.out.println("Amount: " + request.getParameter("amount"));
-
-	        int accountID = Integer.parseInt(request.getParameter("accountID"));
-	        float amount = Float.parseFloat(request.getParameter("amount"));
-
-	        if (bankDAO.withdraw(accountID, amount)) {
-	            response.sendRedirect("Controller?action=listAccounts");
-	        } else {
-	            request.setAttribute("error", "Withdrawal failed...");
-	            request.getRequestDispatcher("jsp/transactions/DepositOrWithdraw.jsp").forward(request, response);
-	        }
-	    } catch (NumberFormatException e) {
-	        System.out.println("Invalid input: " + e.getMessage()); // Debug
-	        request.setAttribute("error", "Invalid input.");
-	        request.getRequestDispatcher("jsp/transactions/DepositOrWithdraw.jsp").forward(request, response);
-	    }
-	}
-	
-	private void handleTransfer(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-	    try {
-	        // for debugging
-	        System.out.println("Handling transfer request...");
-	        System.out.println("From Account ID: " + request.getParameter("fromAccountID"));
-	        System.out.println("To Account ID: " + request.getParameter("toAccountID"));
-	        System.out.println("Amount: " + request.getParameter("amount"));
-
-	        // get the data from reqqq
-	        int fromAccountID = Integer.parseInt(request.getParameter("fromAccountID"));
-	        int toAccountID = Integer.parseInt(request.getParameter("toAccountID"));
-	        float amount = Float.parseFloat(request.getParameter("amount"));
-
-	        if (bankDAO.transfer(fromAccountID, toAccountID, amount)) {
-	            response.sendRedirect("Controller?action=listAccounts");
-	        } else {
-	            request.setAttribute("error", "Transfer failed...");
-	            request.getRequestDispatcher("jsp/transactions/transfer.jsp").forward(request, response);
-	        }
-	    } catch (NumberFormatException e) {
-	        request.setAttribute("error", "Invalid input. Please enter valid account IDs and amount.");
-	        request.getRequestDispatcher("jsp/transactions/transfer.jsp").forward(request, response);
-	    }
-	}
 }

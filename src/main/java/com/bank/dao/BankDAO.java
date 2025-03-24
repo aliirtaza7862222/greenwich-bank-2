@@ -127,7 +127,6 @@ public class BankDAO {
 		return true;
  	}
 
-//TODO: Create Business Logic for operations Withdraw, Deposit & Transfer
 	public boolean withdraw(int accountId, float amount) {
 		Account account = em.find(Account.class, accountId);
 		if (account != null && account.getAccountBalance() >= amount){
@@ -140,21 +139,36 @@ public class BankDAO {
 	}
 	
 	
+//	testing delete all user accounts
+	public boolean deleteAllUserAccounts(int studentID) {
+	    try {
+	        int deletedCount = em.createQuery(
+	                "DELETE FROM Account a WHERE a.student.studentID = :studentId")
+	                .setParameter("studentId", studentID)
+	                .executeUpdate();
+	        return deletedCount > 0;
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+	
+	
 	public boolean deposit(int accountId, float amount) {
 		// Literally the same as withdraw except + amount
 		Account account = em.find(Account.class, accountId);
-		if (account != null && account.getAccountBalance() >= amount){
-			// Set balance to be amount less than before
+		//also don't need to check balance
+		if (account != null){
+			// Set balance to be amount more than before
 			account.setAccountBalance(account.getAccountBalance() + amount);
 			em.merge(account);
 			return true;
 		}
 		return false; // Insufficient Funds
 	}
-	
-	
+
 	public boolean transfer(int fromAccountID, int toAccountID, float amount) {
-		 Account fromAccount = em.find(Account.class, fromAccountID);
+		Account fromAccount = em.find(Account.class, fromAccountID);
 		 Account toAccount = em.find(Account.class, toAccountID);
 		 
 		 if (fromAccount != null && toAccount != null && fromAccount.getAccountBalance() >= amount) {
@@ -169,5 +183,17 @@ public class BankDAO {
 		    } else {
 		        return false; // Insufficient funds
 		    }
+	}
+	
+	// testing get account by alias
+	public Account getAccountByAlias(String alias) {
+	    try {
+	        TypedQuery<Account> query = em.createQuery(
+	            "SELECT a FROM Account a WHERE a.accountAlias = :alias", Account.class);
+	        query.setParameter("alias", alias);
+	        return query.getSingleResult();
+	    } catch (NoResultException e) {
+	        return null;
+	    }
 	}
 }

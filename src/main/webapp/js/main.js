@@ -76,8 +76,8 @@ function loadPage(action) {
                 console.error("Content container not found!");
             }
 			if (action === "viewAccount") {
-				attachViewAccountDeleteHandler();
-			}
+					attachViewAccountDeleteHandler();
+					}
 			// handle actions for login POST and button to login page
 			if (action === 'login') {
 			        handleLoginForm();

@@ -8,9 +8,8 @@ import jakarta.persistence.*;
 
 /**
  * The persistent class for the Accounts database table.
+ * 
  */
-
-
 @Entity
 @Table(name="Accounts")
 @NamedQuery(name="Account.findAll", query="SELECT a FROM Account a")
